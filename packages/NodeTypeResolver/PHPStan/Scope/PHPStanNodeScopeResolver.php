@@ -34,6 +34,7 @@ use Rector\Core\Stubs\DummyTraitClass;
 use Rector\NodeTypeResolver\Node\AttributeKey;
 use Rector\NodeTypeResolver\PHPStan\Scope\NodeVisitor\RemoveDeepChainMethodCallNodeVisitor;
 use Symplify\PackageBuilder\Reflection\PrivatesAccessor;
+use Symplify\PackageBuilder\Reflection\PrivatesCaller;
 use Symplify\SmartFileSystem\SmartFileInfo;
 use Throwable;
 
@@ -91,6 +92,16 @@ final class PHPStanNodeScopeResolver
                 $this->privatesAccessor->setPrivateProperty($traitScope, 'context', $scopeContext);
 
                 $traitScope = $traitScope->enterTrait($traitReflectionClass);
+
+                // extract to another service
+                $privatesCaller = new PrivatesCaller();
+                /* @see \PHPStan\Analyser\NodeScopeResolver::processExprNode() */
+                // args: \PhpParser\Node\Expr $expr, \PHPStan\Analyser\MutatingScope $scope, callable $nodeCallback, \PHPStan\Analyser\ExpressionContext $context
+                $privatesCaller->callPrivateMethod(
+                    $this->nodeScopeResolver,
+                    'processExprNode',
+                    [$expr, $previousScope, $nodeCallback]
+                );
 
                 $this->nodeScopeResolver->processStmtNodes($node, $node->stmts, $traitScope, $nodeCallback);
                 return;
